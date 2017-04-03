@@ -1,14 +1,23 @@
 var Game = {
     Settings: {
+        Default: {
+            worldHeight: 40,
+            worldWidth: 80,
+            cellSize: 15,
+        },
         Descriptions: {
             startButton: "Graj",
             pauseButton: "Pauza",
+            worldHeight: "Wysokość",
+            worldWidth: "Szerokość",
+            cellSize: "Rozmiar komórki",
         },
         Colors: {
             borderColor: "#888",
             cellBackground: "#fff",
             gameBackground: "#ccc",
             liveCell: "#00f",
+            menuBackground: "#f00",
         },
         World: {
             cycleTime: 200, //ms
@@ -24,6 +33,11 @@ var Game = {
             menuBox: 0,
             Buttons: {
                 startPause: 0,
+            },
+            Inputs: {
+                inHeight: 0,
+                inWidth: 0,
+                cellWidth: 0,
             },
         }
     },
@@ -287,13 +301,60 @@ var Game = {
             Game.DOMElements.Game.world = document.getElementById("world");
         },
         buildMenu: function(){
+
             var menuBox = document.createElement("div");
             var startPause = document.createElement("div");
+            var inHeight = document.createElement("input");
+            var labelHeight = document.createElement("label");
+            var inWidth = document.createElement("input");
+            var labelWidth = document.createElement("label");
+            var inCellSize = document.createElement("input");
+            var labelCell = document.createElement("label");
 
+            inHeight.id = "inHeight";
+            inWidth.id = "inWidth";
+            inCellSize.id = "cellSize";
             startPause.id = "startPause";
             menuBox.id = "menuBox";
 
+            menuBox.style.display = "block";
+            menuBox.style.textAlign = "center";
+            menuBox.style.position = "absolute";
+            menuBox.style.top = 0;
+            menuBox.style.right = 0;
+            menuBox.style.bottom = 0;
+            menuBox.style.left = 0;
+            menuBox.style.margin = "auto";
+            menuBox.style.width = "200px";
+            menuBox.style.height = "200px";
+            menuBox.style.backgroundColor = Game.Settings.Colors.menuBackground;
+
+
+            inHeight.setAttribute("type", "number");
+            inHeight.setAttribute("value", Game.Settings.Default.worldHeight);
+            labelHeight.setAttribute("for", "inHeight");
+            labelHeight.style.display = "block";
+            labelHeight.innerHTML = Game.Settings.Descriptions.worldHeight;
+
+            inWidth.setAttribute("type", "number");
+            inWidth.setAttribute("value", Game.Settings.Default.worldWidth);
+            labelWidth.setAttribute("for", "inWidth");
+            labelWidth.style.display = "block";
+            labelWidth.innerHTML = Game.Settings.Descriptions.worldWidth;
+
+            inCellSize.setAttribute("type", "number");
+            inCellSize.setAttribute("value", Game.Settings.Default.cellSize)
+            labelCell.setAttribute("for", "cellSize");
+            labelCell.style.display = "block";
+            labelCell.innerHTML = Game.Settings.Descriptions.cellSize;
+
             menuBox.appendChild(startPause);
+            menuBox.appendChild(labelHeight);
+            menuBox.appendChild(inHeight);
+            menuBox.appendChild(labelWidth);
+            menuBox.appendChild(inWidth);
+            menuBox.appendChild(labelCell);
+            menuBox.appendChild(inCellSize);
             Game.DOMElements.Game.gameBox.appendChild(menuBox);
 
             Game.DOMElements.Menu.menuBox = document.getElementById("menuBox");
@@ -301,8 +362,8 @@ var Game = {
         },
     },
 }
+
 Game.Start.buildGameBox();
 Game.Start.buildMenu();
 Game.Interface.setStartPause();
-Game.Draw.newWorld(40, 80, 15);
-//Game.Interface.setButtons();
+Game.Draw.newWorld(Game.Settings.Default.worldHeight, Game.Settings.Default.worldWidth, Game.Settings.Default.cellSize);
