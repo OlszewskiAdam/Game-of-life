@@ -11,13 +11,25 @@ var Game = {
             worldHeight: "Wysokość",
             worldWidth: "Szerokość",
             cellSize: "Rozmiar komórki",
+            drawButton: "Narysuj świat",
+            cleanButton: "Wyczyść świat",
         },
         Colors: {
             borderColor: "#888",
             cellBackground: "#fff",
             gameBackground: "#ccc",
             liveCell: "#00f",
-            menuBackground: "#f00",
+            menuBackground: "#777",
+            menuColor: "#fff",
+            buttonsBackground: "#444",
+            buttonsBorder: "#222",
+            buttonsColor: "#fff",
+        },
+        Buttons: {
+            padding: 0,
+            borderRadius: 0,
+            width: 150,
+            margin: "10px auto",
         },
         World: {
             cycleTime: 200, //ms
@@ -34,12 +46,18 @@ var Game = {
             Buttons: {
                 startPause: 0,
             },
-            Inputs: {
+            NewWorldMenu: {
+                newWorld: 0,
                 inHeight: 0,
+                labelHeight: 0,
                 inWidth: 0,
-                cellWidth: 0,
+                labelWidth: 0,
+                inCell: 0,
+                labelCell: 0,
+                drawButton: 0,
+                cleanButton: 0,
             },
-        }
+        },
     },
     Sizes: {
         worldWidth: 0,
@@ -61,6 +79,7 @@ var Game = {
     },
     Draw: {
         newWorld: function(height, width, cellWidth){
+            Game.DOMElements.Game.world.innerHTML = "";
             Game.Sizes.drawWidth = width;
             Game.Sizes.drawHeight = height;
             Game.Sizes.cellWidth = cellWidth;
@@ -252,10 +271,6 @@ var Game = {
     },
     Interface: {
         setStartPause: function(){
-            if(Game.Start.firstRun === true){
-                Game.DOMElements.Menu.Buttons.startPause.innerHTML = Game.Settings.Descriptions.startButton;
-                Game.Start.firstRun = false;
-            }
             Game.DOMElements.Menu.Buttons.startPause.onclick = function(){
                 if(Game.Intervals.activeInterval === false){
                     Game.Intervals.gameInterval = setInterval(function(){
@@ -272,9 +287,16 @@ var Game = {
                 }
             };
         },
+        setNewWorldMenu: function(){
+            Game.DOMElements.Menu.NewWorldMenu.drawButton.onclick = function(){
+                var height = Game.DOMElements.Menu.NewWorldMenu.inHeight.value;
+                var width = Game.DOMElements.Menu.NewWorldMenu.inWidth.value;
+                var cellSize = Game.DOMElements.Menu.NewWorldMenu.inCell.value;
+                Game.Draw.newWorld(height, width, cellSize);
+            };
+        },
     },
     Start:{
-        firstRun: true,
         buildGameBox: function(){
             var gameBox = document.createElement("div");
             var world = document.createElement("div");
@@ -297,73 +319,117 @@ var Game = {
             world.style.margin = "auto";
             gameBox.appendChild(world);
             Game.DOMElements.body.appendChild(gameBox);
-            Game.DOMElements.Game.gameBox = document.getElementById("gameBox");
-            Game.DOMElements.Game.world = document.getElementById("world");
+            Game.DOMElements.Game.gameBox = gameBox;
+            Game.DOMElements.Game.world = world;
         },
-        buildMenu: function(){
-
+        buildMenuBox: function(){
             var menuBox = document.createElement("div");
-            var startPause = document.createElement("div");
-            var inHeight = document.createElement("input");
-            var labelHeight = document.createElement("label");
-            var inWidth = document.createElement("input");
-            var labelWidth = document.createElement("label");
-            var inCellSize = document.createElement("input");
-            var labelCell = document.createElement("label");
-
-            inHeight.id = "inHeight";
-            inWidth.id = "inWidth";
-            inCellSize.id = "cellSize";
-            startPause.id = "startPause";
             menuBox.id = "menuBox";
-
             menuBox.style.display = "block";
             menuBox.style.textAlign = "center";
             menuBox.style.position = "absolute";
             menuBox.style.top = 0;
-            menuBox.style.right = 0;
-            menuBox.style.bottom = 0;
             menuBox.style.left = 0;
-            menuBox.style.margin = "auto";
-            menuBox.style.width = "200px";
-            menuBox.style.height = "200px";
+            menuBox.style.width = "200px";  //<-------- wymiary menu trzeba zmienic
+            menuBox.style.height = "250px"; //<-------- wymiary menu trzeba zmienic
             menuBox.style.backgroundColor = Game.Settings.Colors.menuBackground;
+            menuBox.style.color = Game.Settings.Colors.menuColor;
+            Game.DOMElements.Game.gameBox.appendChild(menuBox);
+            Game.DOMElements.Menu.menuBox = menuBox;
+        },
+        playMenu: function(){
+            var startPause = document.createElement("div");
+            startPause.id = "startPause";
+            startPause.style.padding = Game.Settings.Buttons.padding;
+            startPause.style.backgroundColor = Game.Settings.Colors.buttonsBackground;
+            startPause.style.border = "2px solid " + Game.Settings.Colors.buttonsBorder;
+            startPause.style.margin = Game.Settings.Buttons.margin;
+            startPause.style.width = Game.Settings.Buttons.width + "px";
+            startPause.style.color = Game.Settings.Colors.buttonsColor;
+            startPause.innerHTML = Game.Settings.Descriptions.startButton;
+            Game.DOMElements.Menu.menuBox.appendChild(startPause);
+            Game.DOMElements.Menu.Buttons.startPause = startPause;
+        },
+        NewWorldMenu: function(){
+            var newWorld =  document.createElement("div");
+            var inHeight = document.createElement("input");
+            var labelHeight = document.createElement("label");
+            var inWidth = document.createElement("input");
+            var labelWidth = document.createElement("label");
+            var inCell = document.createElement("input");
+            var labelCell = document.createElement("label");
+            var drawButton = document.createElement("div");
+            var cleanButton = document.createElement("div");
 
-
+            inHeight.id = "inHeight";
             inHeight.setAttribute("type", "number");
             inHeight.setAttribute("value", Game.Settings.Default.worldHeight);
+            Game.DOMElements.Menu.NewWorldMenu.inHeight = inHeight;
+
             labelHeight.setAttribute("for", "inHeight");
             labelHeight.style.display = "block";
             labelHeight.innerHTML = Game.Settings.Descriptions.worldHeight;
+            Game.DOMElements.Menu.NewWorldMenu.labelHeight = labelHeight;
 
+            inWidth.id = "inWidth";
             inWidth.setAttribute("type", "number");
             inWidth.setAttribute("value", Game.Settings.Default.worldWidth);
+            Game.DOMElements.Menu.NewWorldMenu.inWidth = inWidth;
+
             labelWidth.setAttribute("for", "inWidth");
             labelWidth.style.display = "block";
             labelWidth.innerHTML = Game.Settings.Descriptions.worldWidth;
+            Game.DOMElements.Menu.NewWorldMenu.labelWidth = labelWidth;
 
-            inCellSize.setAttribute("type", "number");
-            inCellSize.setAttribute("value", Game.Settings.Default.cellSize)
+            inCell.id = "cellSize";
+            inCell.setAttribute("type", "number");
+            inCell.setAttribute("value", Game.Settings.Default.cellSize)
+            Game.DOMElements.Menu.NewWorldMenu.inCell = inCell;
+
             labelCell.setAttribute("for", "cellSize");
             labelCell.style.display = "block";
             labelCell.innerHTML = Game.Settings.Descriptions.cellSize;
+            Game.DOMElements.Menu.NewWorldMenu.labelCell = labelCell;
 
-            menuBox.appendChild(startPause);
-            menuBox.appendChild(labelHeight);
-            menuBox.appendChild(inHeight);
-            menuBox.appendChild(labelWidth);
-            menuBox.appendChild(inWidth);
-            menuBox.appendChild(labelCell);
-            menuBox.appendChild(inCellSize);
-            Game.DOMElements.Game.gameBox.appendChild(menuBox);
+            drawButton.id = "drawButton";
+            drawButton.style.padding = Game.Settings.Buttons.padding;
+            drawButton.style.backgroundColor = Game.Settings.Colors.buttonsBackground;
+            drawButton.style.border = "2px solid " + Game.Settings.Colors.buttonsBorder;
+            drawButton.style.margin = Game.Settings.Buttons.margin;
+            drawButton.style.width = Game.Settings.Buttons.width + "px";
+            drawButton.style.color = Game.Settings.Colors.buttonsColor;
+            drawButton.innerHTML = Game.Settings.Descriptions.drawButton;
+            Game.DOMElements.Menu.NewWorldMenu.drawButton = drawButton;
 
-            Game.DOMElements.Menu.menuBox = document.getElementById("menuBox");
-            Game.DOMElements.Menu.Buttons.startPause = document.getElementById("startPause");
+            cleanButton.id = "cleanButton";
+            cleanButton.style.padding = Game.Settings.Buttons.padding;
+            cleanButton.style.backgroundColor = Game.Settings.Colors.buttonsBackground;
+            cleanButton.style.border = "2px solid " + Game.Settings.Colors.buttonsBorder;
+            cleanButton.style.margin = Game.Settings.Buttons.margin;
+            cleanButton.style.width = Game.Settings.Buttons.width + "px";
+            cleanButton.style.color = Game.Settings.Colors.buttonsColor;
+            cleanButton.innerHTML = Game.Settings.Descriptions.cleanButton;
+            Game.DOMElements.Menu.NewWorldMenu.cleanButton = cleanButton;
+
+            newWorld.appendChild(labelHeight);
+            newWorld.appendChild(inHeight);
+            newWorld.appendChild(labelWidth);
+            newWorld.appendChild(inWidth);
+            newWorld.appendChild(labelCell);
+            newWorld.appendChild(inCell);
+            newWorld.appendChild(drawButton);
+            newWorld.appendChild(cleanButton);
+
+            Game.DOMElements.Menu.NewWorldMenu.newWorld = newWorld;
+            Game.DOMElements.Menu.menuBox.appendChild(newWorld);
         },
     },
 }
 
 Game.Start.buildGameBox();
-Game.Start.buildMenu();
+Game.Start.buildMenuBox();
+Game.Start.NewWorldMenu();
+Game.Start.playMenu();
+Game.Interface.setNewWorldMenu();
 Game.Interface.setStartPause();
-Game.Draw.newWorld(Game.Settings.Default.worldHeight, Game.Settings.Default.worldWidth, Game.Settings.Default.cellSize);
+//Game.Draw.newWorld(Game.Settings.Default.worldHeight, Game.Settings.Default.worldWidth, Game.Settings.Default.cellSize);
