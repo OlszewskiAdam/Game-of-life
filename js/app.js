@@ -1,23 +1,41 @@
 var Game = {
     Settings: {
         Default: {
-            worldHeight: 40,
-            worldWidth: 80,
-            cellSize: 15,
+            worldHeight: 25,
+            worldWidth: 45,
+            cellSize: 20,
         },
         Descriptions: {
             startButton: "Graj",
             pauseButton: "Pauza",
             worldHeight: "Wysokość",
             worldWidth: "Szerokość",
-            cellSize: "Rozmiar komórki",
+            cellSize: "Rozmiar komórki / px",
             drawButton: "Narysuj świat",
-            cleanButton: "Wyczyść świat",
+            cleanButton: "Resetuj świat",
+            cycleTime: "Czas cyklu / ms",
+            drawAlert: "Rozmiar planszy przekracza 35000 komórek. To może spowodować problemy z wydajnością. Czy na pewno chcesz narysować tak dużą plansze?",
+            dataAlert: "Pola wysokość, szerokość, oraz rozmiar komórki, przyjmują tylko liczby całkowite",
         },
         Display: {
+            Body: {
+                margin: 0,
+                padding: 0,
+                font: "Arial",
+            },
+            Buttons: {
+                padding: 0,
+                borderRadius: 0,
+                width: 150,
+                margin: "10px auto",
+            },
+            Cells: {
+
+            },
             Colors: {
-                borderColor: "#888",
+                cellBorderColor: "#888",
                 cellBackground: "#fff",
+                cellHover: "rgba(0,0,0,0.5)",
                 gameBackground: "#ccc",
                 liveCell: "#00f",
                 menuBackground: "#777",
@@ -26,23 +44,38 @@ var Game = {
                 buttonsBorder: "#222",
                 buttonsColor: "#fff",
             },
-            Buttons: {
-                padding: 0,
-                borderRadius: 0,
-                width: 150,
-                margin: "10px auto",
+            GameBox: {
+                position: "relative",
+            },
+            Inputs: {
+
+            },
+            Labels: {
+
             },
             Menu: {
                 display: "block",
                 textAlign: "center",
-                positon: "absolute",
+                position: "absolute",
+                margin: "auto 0 auto 30px",
                 top: 0,
+                right: "auto",
+                bottom: 0,
                 left: 0,
                 height: 250,
-                width: 250,
+                width: 200,
+            },
+            World: {
+                position: "absolute",
+                margin: "auto",
+                top: 0,
+                right: 0,
+                bottom: 0,
+                left: 0,
             },
         },
         World: {
+            maxCell: 35000, //Test na 36400 komórkach. Chwile zajeło narysowanie a potem teoretycznie działał ale przybliżanie oddalanie obrazu trwało dobrych kilka sekund. Myślę że można ustawic nawet mniej.
             cycleTime: 200, //ms
         },
     },
@@ -80,6 +113,7 @@ var Game = {
     CellArrays: {
         cellTab: [],
         newCellTab: [],
+        defaultTab: [],
     },
     Counters: {
         liveCounter: 0,
@@ -105,26 +139,37 @@ var Game = {
                     newCell.style.width = cellWidth + "px";
                     newCell.style.height = cellWidth + "px";
                     newCell.style.float = "left";
-                    newCell.style.border = "0.5px solid " + Game.Settings.Display.Colors.borderColor;
+                    newCell.style.border = "0.5px solid " + Game.Settings.Display.Colors.cellBorderColor;
                     newCell.setAttribute("x", j);
                     newCell.setAttribute("y", i);
                     newCell.setAttribute("index", index);
                     newCell.setAttribute("live", 0);
                     Game.CellArrays.cellTab.push([j, i, index, 0]);
+                    Game.CellArrays.defaultTab.push([j, i, index, 0]);
                     newCell.onclick = function(event){
                         var index = event.target.attributes.index.value;
-                        if(event.target.className === "live"){
-                            event.target.className = "";
+                        if(event.target.attributes.live.value == 1){
                             event.target.style.backgroundColor = Game.Settings.Display.Colors.cellBackground;
                             event.target.setAttribute("live", 0);
                             Game.CellArrays.cellTab[index][3] = 0;
                         }
-                        else if(event.target.className === ""){
-                            event.target.className = "live";
+                        else if(event.target.attributes.live.value == 0){
                             event.target.style.backgroundColor = Game.Settings.Display.Colors.liveCell;
                             event.target.setAttribute("live", 1);
                             Game.CellArrays.cellTab[index][3] = 1;
                         }
+                    };
+                    newCell.onmouseover = function(event){ // <--- To się może brzydko zemscic przy wprowadzeniu wiekszej ilosci kolorow komorek. Trzeba wydumac cos bardziej uniwersalnego. ?Kolor w atrybucie zapisac?
+                        var oldColor = event.target.style.backgroundColor;
+                        event.target.style.backgroundColor = Game.Settings.Display.Colors.cellHover;
+                        event.target.onmouseout = function(event){  //To sie na pewno brzydko zemsci.
+                            if(event.target.attributes.live.value == 0){
+                                event.target.style.backgroundColor = Game.Settings.Display.Colors.cellBackground;
+                            }
+                            else if(event.target.attributes.live.value == 1){
+                                event.target.style.backgroundColor = Game.Settings.Display.Colors.liveCell;
+                            }
+                        };
                     };
                     Game.DOMElements.Game.world.appendChild(newCell);
                 };
@@ -133,9 +178,6 @@ var Game = {
             Game.Sizes.worldHeight = (height * cellWidth) + 1;
             Game.DOMElements.Game.world.style.width = Game.Sizes.worldWidth + "px";
             Game.DOMElements.Game.world.style.height = Game.Sizes.worldHeight + "px";
-        },
-        gameMenu: function(){
-
         },
     },
     Check: {
@@ -268,12 +310,10 @@ var Game = {
                 var index = tab[i][2];
                 var cell = Game.DOMElements.Game.world.children[index];
                 if(tab[i][3] === 0){
-                    cell.className = "";
                     cell.setAttribute("live", 0);
                     cell.style.backgroundColor = Game.Settings.Display.Colors.cellBackground;
                 }
                 else if(tab[i][3] === 1){
-                    cell.className = "live";
                     cell.setAttribute("live", 1);
                     cell.style.backgroundColor = Game.Settings.Display.Colors.liveCell;
                 }
@@ -302,10 +342,39 @@ var Game = {
         },
         setNewWorldMenu: function(){
             Game.DOMElements.Menu.NewWorldMenu.drawButton.onclick = function(){
-                var height = parseInt(Game.DOMElements.Menu.NewWorldMenu.inHeight.value);
-                var width = parseInt(Game.DOMElements.Menu.NewWorldMenu.inWidth.value);
-                var cellSize = parseInt(Game.DOMElements.Menu.NewWorldMenu.inCell.value);
-                Game.Draw.newWorld(height, width, cellSize);
+                clearInterval(Game.Intervals.gameInterval);
+                Game.Intervals.activeInterval = false;
+                Game.DOMElements.Menu.Buttons.startPause.innerHTML = Game.Settings.Descriptions.startButton;
+                var height = Math.floor(Game.DOMElements.Menu.NewWorldMenu.inHeight.value);
+                var width = Math.floor(Game.DOMElements.Menu.NewWorldMenu.inWidth.value);
+                var cellSize = Math.floor(Game.DOMElements.Menu.NewWorldMenu.inCell.value);
+                if (height == 0 || width == 0 || cellSize == 0){
+                     alert(Game.Settings.Descriptions.dataAlert);
+                     return false;
+                }
+                else{
+                    if(height * width > Game.Settings.World.maxCell){
+                        var drawWarning = confirm(Game.Settings.Descriptions.drawAlert);
+                        if(drawWarning){
+                            Game.Draw.newWorld(height, width, cellSize);
+                        }
+                    }
+                    else{
+                        Game.Draw.newWorld(height, width, cellSize);
+                    };
+                }
+            };
+            Game.DOMElements.Menu.NewWorldMenu.cleanButton.onclick = function(){
+                clearInterval(Game.Intervals.gameInterval);
+                Game.Intervals.activeInterval = false;
+                Game.DOMElements.Menu.Buttons.startPause.innerHTML = Game.Settings.Descriptions.startButton;
+                Game.CellArrays.cellTab = Game.CellArrays.defaultTab;
+                for (var i = 0; i < Game.DOMElements.Game.world.children.length; i++) {
+                    Game.DOMElements.Game.world.children[i].setAttribute.live = 0;
+                    Game.CellArrays.cellTab[i][3] = 0;
+                };
+                Game.GameState.drawNewState(Game.CellArrays.cellTab);
+                Game.CellArrays.cellTab = Game.CellArrays.defaultTab;
             };
         },
     },
@@ -316,20 +385,21 @@ var Game = {
             var newHeight = window.innerHeight;
             var newWidth = window.innerWidth;
             var body = Game.DOMElements.body;
-            body.style.margin = 0;
-            body.style.padding = 0;
+            body.style.margin = Game.Settings.Display.Body.margin;
+            body.style.padding = Game.Settings.Display.Body.padding;
+            body.style.fontFamily = Game.Settings.Display.Body.font;
+            gameBox.id = "gameBox";
             gameBox.style.backgroundColor = Game.Settings.Display.Colors.gameBackground;
             gameBox.style.height = newHeight + "px";
             gameBox.style.width = newWidth + "px";
-            gameBox.style.positon = "relative";
-            gameBox.id = "gameBox";
+            gameBox.style.position = Game.Settings.Display.GameBox.position;
             world.id = "world";
-            world.style.top = 0;
-            world.style.right = 0;
-            world.style.bottom = 0;
-            world.style.left = 0;
-            world.style.position = "absolute";
-            world.style.margin = "auto";
+            world.style.top = Game.Settings.Display.World.top;
+            world.style.right = Game.Settings.Display.World.right;
+            world.style.bottom = Game.Settings.Display.World.bottom;
+            world.style.left = Game.Settings.Display.World.left;
+            world.style.position = Game.Settings.Display.World.position;
+            world.style.margin = Game.Settings.Display.World.margin;
             gameBox.appendChild(world);
             Game.DOMElements.body.appendChild(gameBox);
             Game.DOMElements.Game.gameBox = gameBox;
@@ -340,8 +410,11 @@ var Game = {
             menuBox.id = "menuBox";
             menuBox.style.display = Game.Settings.Display.Menu.display;
             menuBox.style.textAlign = Game.Settings.Display.Menu.textAlign;
-            menuBox.style.position = Game.Settings.Display.Menu.positon;
+            menuBox.style.position = Game.Settings.Display.Menu.position;
+            menuBox.style.margin = Game.Settings.Display.Menu.margin;
             menuBox.style.top = Game.Settings.Display.Menu.top;
+            menuBox.style.right = Game.Settings.Display.Menu.right;
+            menuBox.style.bottom = Game.Settings.Display.Menu.bottom;
             menuBox.style.left = Game.Settings.Display.Menu.left;
             menuBox.style.width = Game.Settings.Display.Menu.width + "px";
             menuBox.style.height = Game.Settings.Display.Menu.height + "px";
@@ -441,8 +514,8 @@ var Game = {
 
 Game.Start.buildGameBox();
 Game.Start.buildMenuBox();
-Game.Start.NewWorldMenu();
 Game.Start.playMenu();
-Game.Interface.setNewWorldMenu();
+Game.Start.NewWorldMenu();
 Game.Interface.setStartPause();
+Game.Interface.setNewWorldMenu();
 Game.Draw.newWorld(Game.Settings.Default.worldHeight, Game.Settings.Default.worldWidth, Game.Settings.Default.cellSize);
