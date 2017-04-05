@@ -23,6 +23,10 @@ var Game = {
                 padding: 0,
                 font: "Arial",
             },
+            Borders: {
+                cellBorder: "0.5px solid #888",
+                cellHover: "2.5px solid black",
+            },
             Buttons: {
                 padding: 0,
                 borderRadius: 0,
@@ -33,9 +37,9 @@ var Game = {
 
             },
             Colors: {
-                cellBorderColor: "#888",
+                //cellBorderColor: "#888",
                 cellBackground: "#fff",
-                cellHover: "rgba(0,0,0,0.5)",
+                //cellHover: "rgba(0,0,0,0.5)",
                 gameBackground: "#ccc",
                 liveCell: "#00f",
                 menuBackground: "#777",
@@ -139,7 +143,7 @@ var Game = {
                     newCell.style.width = cellWidth + "px";
                     newCell.style.height = cellWidth + "px";
                     newCell.style.float = "left";
-                    newCell.style.border = "0.5px solid " + Game.Settings.Display.Colors.cellBorderColor;
+                    newCell.style.border = Game.Settings.Display.Borders.cellBorder;
                     newCell.setAttribute("x", j);
                     newCell.setAttribute("y", i);
                     newCell.setAttribute("index", index);
@@ -159,16 +163,10 @@ var Game = {
                             Game.CellArrays.cellTab[index][3] = 1;
                         }
                     };
-                    newCell.onmouseover = function(event){ // <--- To się może brzydko zemscic przy wprowadzeniu wiekszej ilosci kolorow komorek. Trzeba wydumac cos bardziej uniwersalnego. ?Kolor w atrybucie zapisac?
-                        var oldColor = event.target.style.backgroundColor;
-                        event.target.style.backgroundColor = Game.Settings.Display.Colors.cellHover;
-                        event.target.onmouseout = function(event){  //To sie na pewno brzydko zemsci.
-                            if(event.target.attributes.live.value == 0){
-                                event.target.style.backgroundColor = Game.Settings.Display.Colors.cellBackground;
-                            }
-                            else if(event.target.attributes.live.value == 1){
-                                event.target.style.backgroundColor = Game.Settings.Display.Colors.liveCell;
-                            }
+                    newCell.onmouseover = function(event){
+                        event.target.style.border = Game.Settings.Display.Borders.cellHover;
+                        event.target.onmouseout = function(event){
+                            event.target.style.border = Game.Settings.Display.Borders.cellBorder;
                         };
                     };
                     Game.DOMElements.Game.world.appendChild(newCell);
