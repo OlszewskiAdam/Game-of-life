@@ -2,7 +2,7 @@ var Game = {
     Settings: {
         Default: {
             worldHeight: 25,
-            worldWidth: 45,
+            worldWidth: 66,
             cellSize: 20,
         },
         Descriptions: {
@@ -25,7 +25,8 @@ var Game = {
             },
             Borders: {
                 cellBorder: "0.5px solid #888",
-                cellHover: "2.5px solid black",
+                cellHover: "2.5px solid #444",
+                buttonsBorder: "2px solid #222"
             },
             Buttons: {
                 padding: 0,
@@ -34,18 +35,17 @@ var Game = {
                 margin: "10px auto",
             },
             Cells: {
+                boxSizing: "border-box",
+                float: "left",
 
             },
             Colors: {
-                //cellBorderColor: "#888",
                 cellBackground: "#fff",
-                //cellHover: "rgba(0,0,0,0.5)",
                 gameBackground: "#ccc",
-                liveCell: "#00f",
+                liveCell: "#0000ff",
                 menuBackground: "#777",
                 menuColor: "#fff",
                 buttonsBackground: "#444",
-                buttonsBorder: "#222",
                 buttonsColor: "#fff",
             },
             GameBox: {
@@ -55,32 +55,32 @@ var Game = {
 
             },
             Labels: {
-
+                display: "block",
             },
             Menu: {
                 display: "block",
                 textAlign: "center",
                 position: "absolute",
-                margin: "auto 0 auto 30px",
+                margin: "auto",
                 top: 0,
                 right: "auto",
                 bottom: 0,
-                left: 0,
-                height: 250,
+                left: "30px",
+                height: 287,
                 width: 200,
             },
             World: {
                 position: "absolute",
                 margin: "auto",
                 top: 0,
-                right: 0,
+                right: "30px",
                 bottom: 0,
-                left: 0,
+                left: "auto",
             },
         },
         World: {
             maxCell: 35000, //Test na 36400 komórkach. Chwile zajeło narysowanie a potem teoretycznie działał ale przybliżanie oddalanie obrazu trwało dobrych kilka sekund. Myślę że można ustawic nawet mniej.
-            cycleTime: 200, //ms
+            cycleTime: 500, //ms
         },
     },
     DOMElements: {
@@ -91,8 +91,11 @@ var Game = {
         },
         Menu: {
             menuBox: 0,
-            Buttons: {
+            PlayMenu: {
+                playMenu: 0,
                 startPause: 0,
+                inInterval: 0,
+                labelInterval: 0,
             },
             NewWorldMenu: {
                 newWorld: 0,
@@ -118,6 +121,7 @@ var Game = {
         cellTab: [],
         newCellTab: [],
         defaultTab: [],
+        colorTab: [],
     },
     Counters: {
         liveCounter: 0,
@@ -125,58 +129,6 @@ var Game = {
     Intervals: {
         gameInterval: 0,
         activeInterval: false,
-    },
-    Draw: {
-        newWorld: function(height, width, cellWidth){
-            Game.DOMElements.Game.world.innerHTML = "";
-            Game.CellArrays.cellTab = [];
-            Game.CellArrays.newCellTab = [];
-            Game.Sizes.drawWidth = width;
-            Game.Sizes.drawHeight = height;
-            Game.Sizes.cellWidth = cellWidth;
-            for (var i = 0; i < height; i++){
-                for (var j = 0; j < width; j++) {
-                    var newCell = document.createElement('div');
-                    var index = j + i * width;
-                    newCell.style.backgroundColor = Game.Settings.Display.Colors.cellBackground;
-                    newCell.style.boxSizing = "border-box";
-                    newCell.style.width = cellWidth + "px";
-                    newCell.style.height = cellWidth + "px";
-                    newCell.style.float = "left";
-                    newCell.style.border = Game.Settings.Display.Borders.cellBorder;
-                    newCell.setAttribute("x", j);
-                    newCell.setAttribute("y", i);
-                    newCell.setAttribute("index", index);
-                    newCell.setAttribute("live", 0);
-                    Game.CellArrays.cellTab.push([j, i, index, 0]);
-                    Game.CellArrays.defaultTab.push([j, i, index, 0]);
-                    newCell.onclick = function(event){
-                        var index = event.target.attributes.index.value;
-                        if(event.target.attributes.live.value == 1){
-                            event.target.style.backgroundColor = Game.Settings.Display.Colors.cellBackground;
-                            event.target.setAttribute("live", 0);
-                            Game.CellArrays.cellTab[index][3] = 0;
-                        }
-                        else if(event.target.attributes.live.value == 0){
-                            event.target.style.backgroundColor = Game.Settings.Display.Colors.liveCell;
-                            event.target.setAttribute("live", 1);
-                            Game.CellArrays.cellTab[index][3] = 1;
-                        }
-                    };
-                    newCell.onmouseover = function(event){
-                        event.target.style.border = Game.Settings.Display.Borders.cellHover;
-                        event.target.onmouseout = function(event){
-                            event.target.style.border = Game.Settings.Display.Borders.cellBorder;
-                        };
-                    };
-                    Game.DOMElements.Game.world.appendChild(newCell);
-                };
-            };
-            Game.Sizes.worldWidth = (width * cellWidth) + 1;
-            Game.Sizes.worldHeight = (height * cellWidth) + 1;
-            Game.DOMElements.Game.world.style.width = Game.Sizes.worldWidth + "px";
-            Game.DOMElements.Game.world.style.height = Game.Sizes.worldHeight + "px";
-        },
     },
     Check: {
         topLeft: function(xPos, yPos){
@@ -186,6 +138,10 @@ var Game = {
                 var index = newX + newY * Game.Sizes.drawWidth;
                 var cellHtml = Game.DOMElements.Game.world.children[index];
                 var checkLive = cellHtml.attributes.live.value;
+                if(checkLive == 1){
+                    var color = cellHtml.style.backgroundColor;
+                    Game.CellArrays.colorTab.push(color);
+                };
                 Game.Counters.liveCounter += parseInt(checkLive);
             }
         },
@@ -196,6 +152,10 @@ var Game = {
                 var index = newX + newY * Game.Sizes.drawWidth;
                 var cellHtml = Game.DOMElements.Game.world.children[index];
                 var checkLive = cellHtml.attributes.live.value;
+                if(checkLive == 1){
+                    var color = cellHtml.style.backgroundColor;
+                    Game.CellArrays.colorTab.push(color);
+                };
                 Game.Counters.liveCounter += parseInt(checkLive);
             }
         },
@@ -206,6 +166,10 @@ var Game = {
                 var index = newX + newY * Game.Sizes.drawWidth;
                 var cellHtml = Game.DOMElements.Game.world.children[index];
                 var checkLive = cellHtml.attributes.live.value;
+                if(checkLive == 1){
+                    var color = cellHtml.style.backgroundColor;
+                    Game.CellArrays.colorTab.push(color);
+                };
                 Game.Counters.liveCounter += parseInt(checkLive);
             }
         },
@@ -216,6 +180,10 @@ var Game = {
                 var index = newX + newY * Game.Sizes.drawWidth;
                 var cellHtml = Game.DOMElements.Game.world.children[index];
                 var checkLive = cellHtml.attributes.live.value;
+                if(checkLive == 1){
+                    var color = cellHtml.style.backgroundColor;
+                    Game.CellArrays.colorTab.push(color);
+                };
                 Game.Counters.liveCounter += parseInt(checkLive);
             }
         },
@@ -226,6 +194,10 @@ var Game = {
                 var index = newX + newY * Game.Sizes.drawWidth;
                 var cellHtml = Game.DOMElements.Game.world.children[index];
                 var checkLive = cellHtml.attributes.live.value;
+                if(checkLive == 1){
+                    var color = cellHtml.style.backgroundColor;
+                    Game.CellArrays.colorTab.push(color);
+                };
                 Game.Counters.liveCounter += parseInt(checkLive);
             }
         },
@@ -236,6 +208,10 @@ var Game = {
                 var index = newX + newY * Game.Sizes.drawWidth;
                 var cellHtml = Game.DOMElements.Game.world.children[index];
                 var checkLive = cellHtml.attributes.live.value;
+                if(checkLive == 1){
+                    var color = cellHtml.style.backgroundColor;
+                    Game.CellArrays.colorTab.push(color);
+                };
                 Game.Counters.liveCounter += parseInt(checkLive);
             }
         },
@@ -246,6 +222,10 @@ var Game = {
                 var index = newX + newY * Game.Sizes.drawWidth;
                 var cellHtml = Game.DOMElements.Game.world.children[index];
                 var checkLive = cellHtml.attributes.live.value;
+                if(checkLive == 1){
+                    var color = cellHtml.style.backgroundColor;
+                    Game.CellArrays.colorTab.push(color);
+                };
                 Game.Counters.liveCounter += parseInt(checkLive);
             }
         },
@@ -256,11 +236,48 @@ var Game = {
                 var index = newX + newY * Game.Sizes.drawWidth;
                 var cellHtml = Game.DOMElements.Game.world.children[index];
                 var checkLive = cellHtml.attributes.live.value;
+                if(checkLive == 1){
+                    var color = cellHtml.style.backgroundColor;
+                    Game.CellArrays.colorTab.push(color);
+                };
                 Game.Counters.liveCounter += parseInt(checkLive);
             }
         },
+        checkColor: function(tab){
+            if(tab.length > 1 && tab.length < 4){
+                if(tab[0] == tab[1] || tab[0] == tab[2]){
+                    return tab[0];
+                }
+                else if(tab[1] == tab[2]){
+                    return tab[1];
+                }
+                else{
+                    var random = Math.random();
+                    if(tab.length == 3){
+                        if(random < 0.33){
+                            return tab[0];
+                        }
+                        else if(random > 0.32 && random < 0.63){
+                            return tab[1];
+                        }
+                        else if(random > 0.62){
+                            return tab[2];
+                        }
+                    }
+                    else{
+                        if(random < 0.5){
+                            return tab[1];
+                        }
+                        else{
+                            return tab[0];
+                        }
+                    }
+                }
+            };
+        },
         checkCell: function(tabElement){
             Game.Counters.liveCounter = 0;
+            Game.CellArrays.colorTab = [];
             var xPos = parseInt(tabElement[0]);
             var yPos = parseInt(tabElement[1]);
             Game.Check.topLeft(xPos, yPos);
@@ -271,12 +288,15 @@ var Game = {
             Game.Check.botLeft(xPos, yPos);
             Game.Check.botCenter(xPos, yPos);
             Game.Check.botRight(xPos, yPos);
-            return Game.Counters.liveCounter;
+            var color = Game.Check.checkColor(Game.CellArrays.colorTab);
+            return [Game.Counters.liveCounter, color];
         },
     },
     GameState: {
         setCellState: function(tabElement){
-            var counter = Game.Check.checkCell(tabElement);
+            var check = Game.Check.checkCell(tabElement);
+            var color = check[1];
+            var counter = check[0];
             var newState = tabElement;
             var index = tabElement[2];
             if(tabElement[3] === 1){ //jesli zyje
@@ -322,19 +342,23 @@ var Game = {
     },
     Interface: {
         setStartPause: function(){
-            Game.DOMElements.Menu.Buttons.startPause.onclick = function(){
-                if(Game.Intervals.activeInterval === false){
-                    Game.Intervals.gameInterval = setInterval(function(){
-                        Game.GameState.setNewState(Game.CellArrays.cellTab);
-                        Game.GameState.drawNewState(Game.CellArrays.newCellTab);
-                    }, Game.Settings.World.cycleTime);
-                    Game.Intervals.activeInterval = true;
-                    Game.DOMElements.Menu.Buttons.startPause.innerHTML = Game.Settings.Descriptions.pauseButton;
-                }
-                else if(Game.Intervals.activeInterval === true){
-                    clearInterval(Game.Intervals.gameInterval);
-                    Game.Intervals.activeInterval = false;
-                    Game.DOMElements.Menu.Buttons.startPause.innerHTML = Game.Settings.Descriptions.startButton;
+            Game.DOMElements.Menu.PlayMenu.startPause.onclick = function(){
+                var time = Game.DOMElements.Menu.PlayMenu.inInterval.value;
+                if(Math.floor(time) > 0){
+                    if(Game.Intervals.activeInterval === false){
+                        Game.Intervals.gameInterval = setInterval(function(){
+                            Game.GameState.setNewState(Game.CellArrays.cellTab);
+                            Game.GameState.drawNewState(Game.CellArrays.newCellTab);
+                        }, time);
+                        Game.Intervals.activeInterval = true;
+                        Game.Settings.World.cycleTime = time;
+                        Game.DOMElements.Menu.PlayMenu.startPause.innerHTML = Game.Settings.Descriptions.pauseButton;
+                    }
+                    else if(Game.Intervals.activeInterval === true){
+                        clearInterval(Game.Intervals.gameInterval);
+                        Game.Intervals.activeInterval = false;
+                        Game.DOMElements.Menu.PlayMenu.startPause.innerHTML = Game.Settings.Descriptions.startButton;
+                    }
                 }
             };
         },
@@ -342,7 +366,7 @@ var Game = {
             Game.DOMElements.Menu.NewWorldMenu.drawButton.onclick = function(){
                 clearInterval(Game.Intervals.gameInterval);
                 Game.Intervals.activeInterval = false;
-                Game.DOMElements.Menu.Buttons.startPause.innerHTML = Game.Settings.Descriptions.startButton;
+                Game.DOMElements.Menu.PlayMenu.startPause.innerHTML = Game.Settings.Descriptions.startButton;
                 var height = Math.floor(Game.DOMElements.Menu.NewWorldMenu.inHeight.value);
                 var width = Math.floor(Game.DOMElements.Menu.NewWorldMenu.inWidth.value);
                 var cellSize = Math.floor(Game.DOMElements.Menu.NewWorldMenu.inCell.value);
@@ -354,18 +378,18 @@ var Game = {
                     if(height * width > Game.Settings.World.maxCell){
                         var drawWarning = confirm(Game.Settings.Descriptions.drawAlert);
                         if(drawWarning){
-                            Game.Draw.newWorld(height, width, cellSize);
+                            Game.Build.newWorld(height, width, cellSize);
                         }
                     }
                     else{
-                        Game.Draw.newWorld(height, width, cellSize);
+                        Game.Build.newWorld(height, width, cellSize);
                     };
                 }
             };
             Game.DOMElements.Menu.NewWorldMenu.cleanButton.onclick = function(){
                 clearInterval(Game.Intervals.gameInterval);
                 Game.Intervals.activeInterval = false;
-                Game.DOMElements.Menu.Buttons.startPause.innerHTML = Game.Settings.Descriptions.startButton;
+                Game.DOMElements.Menu.PlayMenu.startPause.innerHTML = Game.Settings.Descriptions.startButton;
                 Game.CellArrays.cellTab = Game.CellArrays.defaultTab;
                 for (var i = 0; i < Game.DOMElements.Game.world.children.length; i++) {
                     Game.DOMElements.Game.world.children[i].setAttribute.live = 0;
@@ -376,7 +400,7 @@ var Game = {
             };
         },
     },
-    Start:{
+    Build:{
         buildGameBox: function(){
             var gameBox = document.createElement("div");
             var world = document.createElement("div");
@@ -403,6 +427,56 @@ var Game = {
             Game.DOMElements.Game.gameBox = gameBox;
             Game.DOMElements.Game.world = world;
         },
+        newWorld: function(height, width, cellWidth){
+            Game.DOMElements.Game.world.innerHTML = "";
+            Game.CellArrays.cellTab = [];
+            Game.CellArrays.newCellTab = [];
+            Game.Sizes.drawWidth = width;
+            Game.Sizes.drawHeight = height;
+            Game.Sizes.cellWidth = cellWidth;
+            for (var i = 0; i < height; i++){
+                for (var j = 0; j < width; j++) {
+                    var newCell = document.createElement('div');
+                    var index = j + i * width;
+                    newCell.style.backgroundColor = Game.Settings.Display.Colors.cellBackground;
+                    newCell.style.boxSizing = Game.Settings.Display.Cells.boxSizing;
+                    newCell.style.float = Game.Settings.Display.Cells.float;
+                    newCell.style.border = Game.Settings.Display.Borders.cellBorder;
+                    newCell.style.width = cellWidth + "px";
+                    newCell.style.height = cellWidth + "px";
+                    newCell.setAttribute("x", j);
+                    newCell.setAttribute("y", i);
+                    newCell.setAttribute("index", index);
+                    newCell.setAttribute("live", 0);
+                    newCell.onclick = function(event){
+                        var index = event.target.attributes.index.value;
+                        if(event.target.attributes.live.value == 1){
+                            event.target.style.backgroundColor = Game.Settings.Display.Colors.cellBackground;
+                            event.target.setAttribute("live", 0);
+                            Game.CellArrays.cellTab[index][3] = 0;
+                        }
+                        else if(event.target.attributes.live.value == 0){
+                            event.target.style.backgroundColor = Game.Settings.Display.Colors.liveCell;
+                            event.target.setAttribute("live", 1);
+                            Game.CellArrays.cellTab[index][3] = 1;
+                        }
+                    };
+                    newCell.onmouseover = function(event){
+                        event.target.style.border = Game.Settings.Display.Borders.cellHover;
+                        event.target.onmouseout = function(event){
+                            event.target.style.border = Game.Settings.Display.Borders.cellBorder;
+                        };
+                    };
+                    Game.CellArrays.cellTab.push([j, i, index, 0]);
+                    Game.CellArrays.defaultTab.push([j, i, index, 0]);
+                    Game.DOMElements.Game.world.appendChild(newCell);
+                };
+            };
+            Game.Sizes.worldWidth = (width * cellWidth) + 1;
+            Game.Sizes.worldHeight = (height * cellWidth) + 1;
+            Game.DOMElements.Game.world.style.width = Game.Sizes.worldWidth + "px";
+            Game.DOMElements.Game.world.style.height = Game.Sizes.worldHeight + "px";
+        },
         buildMenuBox: function(){
             var menuBox = document.createElement("div");
             menuBox.id = "menuBox";
@@ -422,17 +496,41 @@ var Game = {
             Game.DOMElements.Menu.menuBox = menuBox;
         },
         playMenu: function(){
+            var playMenu = document.createElement("div");
             var startPause = document.createElement("div");
+            var inInterval = document.createElement("input");
+            var labelInterval = document.createElement("label");
+
+            labelInterval.setAttribute("for", "inInterval");
+            labelInterval.style.display = Game.Settings.Display.Labels.display;
+            labelInterval.innerHTML = Game.Settings.Descriptions.cycleTime;
+            Game.DOMElements.Menu.NewWorldMenu.labelInterval = labelInterval;
+
+            inInterval.id = "inInterval";
+            inInterval.setAttribute("type", "number");
+            inInterval.setAttribute("step", 100);
+            inInterval.setAttribute("min", 200);
+            inInterval.setAttribute("max", 5000);
+            inInterval.setAttribute("value", Game.Settings.World.cycleTime);
+            Game.DOMElements.Menu.PlayMenu.inInterval = inInterval;
+
             startPause.id = "startPause";
             startPause.style.padding = Game.Settings.Display.Buttons.padding;
             startPause.style.backgroundColor = Game.Settings.Display.Colors.buttonsBackground;
-            startPause.style.border = "2px solid " + Game.Settings.Display.Colors.buttonsBorder;
+            startPause.style.border = Game.Settings.Display.Borders.buttonsBorder;
             startPause.style.margin = Game.Settings.Display.Buttons.margin;
             startPause.style.width = Game.Settings.Display.Buttons.width + "px";
             startPause.style.color = Game.Settings.Display.Colors.buttonsColor;
             startPause.innerHTML = Game.Settings.Descriptions.startButton;
-            Game.DOMElements.Menu.menuBox.appendChild(startPause);
-            Game.DOMElements.Menu.Buttons.startPause = startPause;
+            Game.DOMElements.Menu.PlayMenu.startPause = startPause;
+
+            playMenu.id = "playMenu";
+            Game.DOMElements.Menu.PlayMenu.playMenu = playMenu;
+
+            playMenu.appendChild(labelInterval);
+            playMenu.appendChild(inInterval);
+            playMenu.appendChild(startPause);
+            Game.DOMElements.Menu.menuBox.appendChild(playMenu);
         },
         NewWorldMenu: function(){
             var newWorld =  document.createElement("div");
@@ -447,38 +545,43 @@ var Game = {
 
             inHeight.id = "inHeight";
             inHeight.setAttribute("type", "number");
+            inHeight.setAttribute("step", 1);
             inHeight.setAttribute("value", Game.Settings.Default.worldHeight);
             Game.DOMElements.Menu.NewWorldMenu.inHeight = inHeight;
 
             labelHeight.setAttribute("for", "inHeight");
-            labelHeight.style.display = "block";
+            labelHeight.style.display = Game.Settings.Display.Labels.display;
             labelHeight.innerHTML = Game.Settings.Descriptions.worldHeight;
             Game.DOMElements.Menu.NewWorldMenu.labelHeight = labelHeight;
 
             inWidth.id = "inWidth";
             inWidth.setAttribute("type", "number");
+            inWidth.setAttribute("step", 1);
             inWidth.setAttribute("value", Game.Settings.Default.worldWidth);
             Game.DOMElements.Menu.NewWorldMenu.inWidth = inWidth;
 
             labelWidth.setAttribute("for", "inWidth");
-            labelWidth.style.display = "block";
+            labelWidth.style.display = Game.Settings.Display.Labels.display;
             labelWidth.innerHTML = Game.Settings.Descriptions.worldWidth;
             Game.DOMElements.Menu.NewWorldMenu.labelWidth = labelWidth;
 
             inCell.id = "cellSize";
             inCell.setAttribute("type", "number");
-            inCell.setAttribute("value", Game.Settings.Default.cellSize)
+            inCell.setAttribute("step", 1);
+            inCell.setAttribute("min", 10);
+            inCell.setAttribute("max", 50);
+            inCell.setAttribute("value", Game.Settings.Default.cellSize);
             Game.DOMElements.Menu.NewWorldMenu.inCell = inCell;
 
             labelCell.setAttribute("for", "cellSize");
-            labelCell.style.display = "block";
+            labelCell.style.display = Game.Settings.Display.Labels.display;
             labelCell.innerHTML = Game.Settings.Descriptions.cellSize;
             Game.DOMElements.Menu.NewWorldMenu.labelCell = labelCell;
 
             drawButton.id = "drawButton";
             drawButton.style.padding = Game.Settings.Display.Buttons.padding;
             drawButton.style.backgroundColor = Game.Settings.Display.Colors.buttonsBackground;
-            drawButton.style.border = "2px solid " + Game.Settings.Display.Colors.buttonsBorder;
+            drawButton.style.border = Game.Settings.Display.Borders.buttonsBorder;
             drawButton.style.margin = Game.Settings.Display.Buttons.margin;
             drawButton.style.width = Game.Settings.Display.Buttons.width + "px";
             drawButton.style.color = Game.Settings.Display.Colors.buttonsColor;
@@ -488,13 +591,14 @@ var Game = {
             cleanButton.id = "cleanButton";
             cleanButton.style.padding = Game.Settings.Display.Buttons.padding;
             cleanButton.style.backgroundColor = Game.Settings.Display.Colors.buttonsBackground;
-            cleanButton.style.border = "2px solid " + Game.Settings.Display.Colors.buttonsBorder;
+            cleanButton.style.border = Game.Settings.Display.Borders.buttonsBorder;
             cleanButton.style.margin = Game.Settings.Display.Buttons.margin;
             cleanButton.style.width = Game.Settings.Display.Buttons.width + "px";
             cleanButton.style.color = Game.Settings.Display.Colors.buttonsColor;
             cleanButton.innerHTML = Game.Settings.Descriptions.cleanButton;
             Game.DOMElements.Menu.NewWorldMenu.cleanButton = cleanButton;
 
+            newWorld.id = "newWorldMenu";
             newWorld.appendChild(labelHeight);
             newWorld.appendChild(inHeight);
             newWorld.appendChild(labelWidth);
@@ -504,16 +608,16 @@ var Game = {
             newWorld.appendChild(drawButton);
             newWorld.appendChild(cleanButton);
 
-            Game.DOMElements.Menu.NewWorldMenu.newWorld = newWorld;
+            Game.DOMElements.Menu.NewWorldMenu.newWorldMenu = newWorld;
             Game.DOMElements.Menu.menuBox.appendChild(newWorld);
         },
     },
 }
 
-Game.Start.buildGameBox();
-Game.Start.buildMenuBox();
-Game.Start.playMenu();
-Game.Start.NewWorldMenu();
-Game.Interface.setStartPause();
+Game.Build.buildGameBox();
+Game.Build.buildMenuBox();
+Game.Build.NewWorldMenu();
+Game.Build.playMenu();
 Game.Interface.setNewWorldMenu();
-Game.Draw.newWorld(Game.Settings.Default.worldHeight, Game.Settings.Default.worldWidth, Game.Settings.Default.cellSize);
+Game.Interface.setStartPause();
+Game.Build.newWorld(Game.Settings.Default.worldHeight, Game.Settings.Default.worldWidth, Game.Settings.Default.cellSize);
